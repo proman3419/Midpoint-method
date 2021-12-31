@@ -9,15 +9,19 @@ def f_deriv(A, B, t, x):
     return A*x + B*exp(-t)
 
 
-def f(A, B, t, xa):
-    return (exp(A*t) * (-B * exp(-(A+1)*t) + xa*A + B + xa)) / (A+1)
+def calculate_C(A, B, a, xa):
+    return (xa * (A+1) + B*exp(-a)) / (exp(A*a) * (A+1))
 
 
-def calculate_xs_act(A, B, ts, xa):
+def f(A, B, C, t, xa):
+    return C*exp(A*t) - ((B*exp(-t)) / (A+1))
+
+
+def calculate_xs_act(A, B, C, ts, xa):
     xs_act = []
 
     for t in ts:
-        xs_act.append(f(A, B, t, xa))
+        xs_act.append(f(A, B, C, t, xa))
 
     return xs_act
 
@@ -42,9 +46,11 @@ def calculate_precision(xs, xs_act):
 
 
 def midpoint_with_precision(A, B, a, b, n, xa, E):
+    C = calculate_C(A, B, a, xa)
+
     while True:
         ts = np.linspace(a, b, n)
-        xs_act = calculate_xs_act(A, B, ts, xa)
+        xs_act = calculate_xs_act(A, B, C, ts, xa)
         xs = midpoint(A, B, xa, ts)
         prec = calculate_precision(xs, xs_act)
 
@@ -59,22 +65,33 @@ def midpoint_with_precision(A, B, a, b, n, xa, E):
         n *= 2
 # LOGIC ########################################################################
 
+
 # INPUT ########################################################################
 def validate_positive_int(arg_name, arg_val):
     if arg_val <= 0:
-        print(f'{arg_name} is expected to be a positive int, current value: {arg_val}')
+        print(f'{arg_name} is expected to be a positive int=')
+        print(f'{arg_name} value: {arg_val}')
+        exit()
+
+
+def validate_order(arg1_name, arg1_val, arg2_name, arg2_val):
+    if arg1_val >= arg2_val:
+        print(f'{arg1_name} is expected to be smaller than {arg2_name}')
+        print(f'{arg1_name} value: {arg1_val}, {arg2_name} value: {arg2_val}')
         exit()
 
 
 def get_args():
-    arg_parser = argparse.ArgumentParser(description='''Midpoint method for equations in form x' = A*x + B*exp(-t)''', formatter_class=argparse.RawTextHelpFormatter)
+    arg_parser = argparse.ArgumentParser(description='''Midpoint method for equations of the form x'(t) = A*x + B*exp(-t)''', formatter_class=argparse.RawTextHelpFormatter)
 
     arg_parser.add_argument(
         '-A', type=float, default=-3, help='A coefficient')
     arg_parser.add_argument(
         '-B', type=float, default=2, help='B coefficient')
     arg_parser.add_argument(
-        '-b', type=float, default=25, help='The end of range to be inspected')
+        '-a', type=float, default=0, help='Start of the range to be inspected')
+    arg_parser.add_argument(
+        '-b', type=float, default=10, help='End of the range to be inspected')
     arg_parser.add_argument(
         '-n', type=int, default=16, help='Amount of steps')
     arg_parser.add_argument(
@@ -84,12 +101,17 @@ def get_args():
     
     args = arg_parser.parse_args()
     validate_positive_int('n', args.n)
+    validate_order('a', args.a, 'b', args.b)
 
     return args
 # INPUT ########################################################################
 
 
+# OUTPUT #######################################################################
+
+# OUTPUT #######################################################################
+
+
 if __name__ == '__main__':
-    a = 0
     args = get_args()
-    midpoint_with_precision(args.A, args.B, a, args.b, args.n, args.xa, args.E)
+    midpoint_with_precision(args.A, args.B, args.a, args.b, args.n, args.xa, args.E)
