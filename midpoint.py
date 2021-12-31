@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import exp
+import argparse
 
 
+# LOGIC ########################################################################
 def f_deriv(A, B, t, x):
     return A*x + B*exp(-t)
 
@@ -55,7 +57,39 @@ def midpoint_with_precision(A, B, a, b, n, xa, E):
             return (xs, xs_act)
 
         n *= 2
+# LOGIC ########################################################################
+
+# INPUT ########################################################################
+def validate_positive_int(arg_name, arg_val):
+    if arg_val <= 0:
+        print(f'{arg_name} is expected to be a positive int, current value: {arg_val}')
+        exit()
+
+
+def get_args():
+    arg_parser = argparse.ArgumentParser(description='''Midpoint method for equations in form x' = A*x + B*exp(-t)''', formatter_class=argparse.RawTextHelpFormatter)
+
+    arg_parser.add_argument(
+        '-A', type=float, default=-3, help='A coefficient')
+    arg_parser.add_argument(
+        '-B', type=float, default=2, help='B coefficient')
+    arg_parser.add_argument(
+        '-b', type=float, default=25, help='The end of range to be inspected')
+    arg_parser.add_argument(
+        '-n', type=int, default=16, help='Amount of steps')
+    arg_parser.add_argument(
+        '-xa', type=float, default=2, help='f(ta), initial value')
+    arg_parser.add_argument(
+        '-E', type=float, default=0.001, help='Precision of solution')
+    
+    args = arg_parser.parse_args()
+    validate_positive_int('n', args.n)
+
+    return args
+# INPUT ########################################################################
 
 
 if __name__ == '__main__':
-    print(midpoint_with_precision(-5, 4, 0, 10, 16, 2, 0.0001))
+    a = 0
+    args = get_args()
+    midpoint_with_precision(args.A, args.B, a, args.b, args.n, args.xa, args.E)
