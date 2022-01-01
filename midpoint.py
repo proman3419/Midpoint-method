@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from math import exp
 import argparse
 import time
+import csv
+import os.path
 
 
 # INPUT ########################################################################
@@ -47,16 +49,21 @@ def get_args():
 
 
 # OUTPUT #######################################################################
-def init_graph_displayer(ts, xs_act):
+def init_displayer(ts, xs_act):
     plt.ion()
     fig = plt.figure()
 
-    update_graph(fig, [ts], [xs_act], ['actual'])
+    update_displayer(fig, [ts], [xs_act], ['actual'])
 
     return fig
 
 
-def update_graph(fig, ts_list, xs_list, labels):
+def lock_displayer():
+    plt.ioff()
+    plt.show()
+
+
+def update_displayer(fig, ts_list, xs_list, labels):
     fig.clf()
     graph = fig.add_subplot(111)
 
@@ -66,12 +73,29 @@ def update_graph(fig, ts_list, xs_list, labels):
     plt.legend()
     fig.canvas.draw()
     fig.canvas.flush_events()
-    fig.clf()
 
 
-def output(fig, n, ts, xs_act, xs, prec):
-    print(n, xs_act, xs, prec)
-    update_graph(fig, [ts, ts], [xs_act, xs], ['actual', 'calculated'])
+def append_to_file(path, data):
+    file_exists = os.path.isfile(path)
+    with open(path, 'a+') as f:
+        writer = csv.DictWriter(f, fieldnames=data.keys(), delimiter='|')
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(data)
+
+
+def get_output_data(n, xs_act, xs, prec):
+    return {'steps': n,
+            'precision': prec,
+            'actual values': xs_act,
+            'calculated values': xs}
+
+
+def output(output_file_path, fig, n, ts, xs_act, xs, prec):
+    output_data = get_output_data(n, xs_act, xs, prec)
+    print(output_data)
+    append_to_file(output_file_path, output_data)
+    update_displayer(fig, [ts, ts], [xs_act, xs], ['actual', 'calculated'])
 # OUTPUT #######################################################################
 
 
@@ -129,15 +153,18 @@ def midpoint_with_precision(A, B, a, b, n, xa, E):
     C = calculate_C(A, B, a, xa)
     ts = np.linspace(a, b, n)
     xs_act = calculate_xs_act(A, B, C, ts, xa)
-    fig = init_graph_displayer(ts, xs_act)
+    fig = init_displayer(ts, xs_act)
+
+    output_file_path = f'midpoint_report_{time.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
 
     while True:
         ts, xs_act, xs, prec = midpoint_iteration(A, B, C, a, b, n, xa)
         
         if prec <= E:
+            lock_displayer()
             return (xs, xs_act)
 
-        output(fig, n, ts, xs_act, xs, prec)
+        output(output_file_path, fig, n, ts, xs_act, xs, prec)
 
         n *= 2
 
