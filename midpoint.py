@@ -8,9 +8,9 @@ import os.path
 
 
 # INPUT ########################################################################
-def validate_positive_int(arg_name, arg_val):
-    if arg_val <= 0:
-        print(f'{arg_name} is expected to be a positive int=')
+def validate_int_greater_than(lower_bound, arg_name, arg_val):
+    if arg_val <= lower_bound:
+        print(f'{arg_name} is expected to be an int greater than {lower_bound}')
         print(f'{arg_name} value: {arg_val}')
         exit()
 
@@ -41,7 +41,7 @@ def get_args():
         '-E', type=float, default=0.001, help='Precision of solution')
     
     args = arg_parser.parse_args()
-    validate_positive_int('n', args.n)
+    validate_int_greater_than(1, 'n', args.n)
     validate_order('a', args.a, 'b', args.b)
 
     return args
@@ -75,25 +75,37 @@ def update_displayer(fig, ts_list, xs_list, labels):
     fig.canvas.flush_events()
 
 
+def get_output_data(n, xs_act, xs, prec):
+    N = len(xs_act)
+    data = [None]*N
+
+    for i in range(N):
+        data[i] = {'steps': n,
+                   'precision': prec,
+                   'actual value': xs_act[i],
+                   'calculated value': xs[i]}
+
+    return data
+
+
+def print_output_data(data):
+    for r in data:
+        print(str(r))
+    print()
+
+
 def append_to_file(path, data):
     file_exists = os.path.isfile(path)
     with open(path, 'a+') as f:
-        writer = csv.DictWriter(f, fieldnames=data.keys(), delimiter='|')
+        writer = csv.DictWriter(f, fieldnames=data[0].keys(), delimiter='|')
         if not file_exists:
             writer.writeheader()
-        writer.writerow(data)
-
-
-def get_output_data(n, xs_act, xs, prec):
-    return {'steps': n,
-            'precision': prec,
-            'actual values': xs_act,
-            'calculated values': xs}
+        writer.writerows(data)
 
 
 def output(output_file_path, fig, n, ts, xs_act, xs, prec):
     output_data = get_output_data(n, xs_act, xs, prec)
-    print(output_data)
+    print_output_data(output_data)
     append_to_file(output_file_path, output_data)
     update_displayer(fig, [ts, ts], [xs_act, xs], ['actual', 'calculated'])
 # OUTPUT #######################################################################
@@ -142,6 +154,7 @@ def calculate_precision(xs, xs_act):
 
 def midpoint_iteration(A, B, C, a, b, n, xa):
     ts = np.linspace(a, b, n)
+    print(ts)
     xs_act = calculate_xs_act(A, B, C, ts, xa)
     xs = midpoint(A, B, xa, ts)
     prec = calculate_precision(xs, xs_act)
