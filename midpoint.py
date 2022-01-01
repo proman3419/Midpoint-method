@@ -125,17 +125,18 @@ def f(A, B, C, t, xa):
 
 
 def calculate_xs_act(A, B, C, ts, xa):
-    xs_act = []
+    N = len(ts)
+    xs_act = np.zeros(N)
 
-    for t in ts:
-        xs_act.append(f(A, B, C, t, xa))
+    for i in range(N):
+        xs_act[i] = f(A, B, C, ts[i], xa)
 
     return xs_act
 
 
 def midpoint(A, B, xa, ts):
     N = len(ts)
-    xs = [0]*N
+    xs = np.zeros(N)
     xs[0] = xa
 
     for i in range(N-1):
@@ -148,13 +149,11 @@ def midpoint(A, B, xa, ts):
 
 
 def calculate_precision(xs, xs_act):
-    n = len(xs)
-    return sum(abs(xs[i] - xs_act[i]) for i in range(n)) / n
+    return np.sum(np.abs(np.subtract(xs, xs_act, dtype=np.float))) / xs.shape[0]
 
 
 def midpoint_iteration(A, B, C, a, b, n, xa):
     ts = np.linspace(a, b, n)
-    print(ts)
     xs_act = calculate_xs_act(A, B, C, ts, xa)
     xs = midpoint(A, B, xa, ts)
     prec = calculate_precision(xs, xs_act)
