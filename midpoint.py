@@ -108,7 +108,7 @@ def calculate_xs_act(A, B, C, ts):
     xs_act = np.zeros(N)
 
     for i in range(N):
-        xs_act[i] = f(A, B, C, ts[i], xa)
+        xs_act[i] = f(A, B, C, ts[i])
 
     return xs_act
 
