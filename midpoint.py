@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import exp
+from mpPlot import MPlot
 import argparse
 import time
 import csv
@@ -36,7 +37,7 @@ def get_args():
     arg_parser.add_argument(
         '-n', type=int, default=16, help='Amount of steps')
     arg_parser.add_argument(
-        '-xa', type=float, default=2, help='f(ta), initial value')
+        '-xa', type=float, default=2, help='f(a), initial value')
     arg_parser.add_argument(
         '-E', type=float, default=0.001, help='Precision of solution')
     
@@ -49,38 +50,13 @@ def get_args():
 
 
 # OUTPUT #######################################################################
-def init_displayer(ts, xs_act):
-    plt.ion()
-    fig = plt.figure()
-
-    update_displayer(fig, [ts], [xs_act], ['actual'])
-
-    return fig
-
-
-def lock_displayer():
-    plt.ioff()
-    plt.show()
-
-
-def update_displayer(fig, ts_list, xs_list, labels):
-    fig.clf()
-    graph = fig.add_subplot(111)
-
-    for i in range(len(labels)):
-        graph.plot(ts_list[i], xs_list[i], label=labels[i])
-
-    plt.legend()
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-
-
-def get_output_data(n, xs_act, xs, prec):
+def get_output_data(n, xs_act, xs, prec, id):
     N = len(xs_act)
     data = [None]*N
 
     for i in range(N):
-        data[i] = {'steps': n,
+        data[i] = {'id': id,
+                   'steps': n,
                    'precision': prec,
                    'actual value': xs_act[i],
                    'calculated value': xs[i]}
@@ -103,11 +79,11 @@ def append_to_file(path, data):
         writer.writerows(data)
 
 
-def output(output_file_path, fig, n, ts, xs_act, xs, prec):
-    output_data = get_output_data(n, xs_act, xs, prec)
+def output(output_file_path, fig, n, ts, xs_act, xs, prec, steps, id):
+    output_data = get_output_data(n, xs_act, xs, prec, id)
     print_output_data(output_data)
     append_to_file(output_file_path, output_data)
-    update_displayer(fig, [ts, ts], [xs_act, xs], ['actual', 'calculated'])
+    fig.update_displayer(ts, [xs_act, xs], ['actual', 'calculated'], steps)
 # OUTPUT #######################################################################
 
 
@@ -120,15 +96,15 @@ def calculate_C(A, B, a, xa):
     return (xa * (A+1) + B*exp(-a)) / (exp(A*a) * (A+1))
 
 
-def f(A, B, C, t, xa):
+def f(A, B, C, t):
     return C*exp(A*t) - ((B*exp(-t)) / (A+1))
 
 
-def calculate_xs_act(A, B, C, ts, xa):
+def calculate_xs_act(A, B, C, ts):
     xs_act = []
 
     for t in ts:
-        xs_act.append(f(A, B, C, t, xa))
+        xs_act.append(f(A, B, C, t))
 
     return xs_act
 
@@ -155,7 +131,7 @@ def calculate_precision(xs, xs_act):
 def midpoint_iteration(A, B, C, a, b, n, xa):
     ts = np.linspace(a, b, n)
     print(ts)
-    xs_act = calculate_xs_act(A, B, C, ts, xa)
+    xs_act = calculate_xs_act(A, B, C, ts)
     xs = midpoint(A, B, xa, ts)
     prec = calculate_precision(xs, xs_act)
 
@@ -165,22 +141,22 @@ def midpoint_iteration(A, B, C, a, b, n, xa):
 def midpoint_with_precision(A, B, a, b, n, xa, E):
     C = calculate_C(A, B, a, xa)
     ts = np.linspace(a, b, n)
-    xs_act = calculate_xs_act(A, B, C, ts, xa)
-    fig = init_displayer(ts, xs_act)
-
+    xs_act = calculate_xs_act(A, B, C, ts)
     output_file_path = f'midpoint_report_{time.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
-
+    fig = MPlot(output_file_path, a, b)
+    fig.update_displayer(ts, [xs_act], ['actual'], 0, True)
+    print(xs_act)
+    id = 0
     while True:
         ts, xs_act, xs, prec = midpoint_iteration(A, B, C, a, b, n, xa)
-        
+
+        output(output_file_path, fig, n, ts, xs_act, xs, prec, n, id)
         if prec <= E:
-            lock_displayer()
+            fig.lock_displayer()
             return (xs, xs_act)
 
-        output(output_file_path, fig, n, ts, xs_act, xs, prec)
-
         n *= 2
-
+        id += 1
         time.sleep(1)
 # LOGIC ########################################################################
 
