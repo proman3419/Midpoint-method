@@ -104,17 +104,18 @@ def f(A, B, C, t):
 
 
 def calculate_xs_act(A, B, C, ts):
-    xs_act = []
+    N = len(ts)
+    xs_act = np.zeros(N)
 
-    for t in ts:
-        xs_act.append(f(A, B, C, t))
+    for i in range(N):
+        xs_act[i] = f(A, B, C, ts[i], xa)
 
     return xs_act
 
 
 def midpoint(A, B, xa, ts):
     N = len(ts)
-    xs = [0] * N
+    xs = np.zeros(N)
     xs[0] = xa
 
     for i in range(N - 1):
@@ -127,13 +128,11 @@ def midpoint(A, B, xa, ts):
 
 
 def calculate_precision(xs, xs_act):
-    n = len(xs)
-    return sum(abs(xs[i] - xs_act[i]) for i in range(n)) / n
+    return np.sum(np.abs(np.subtract(xs, xs_act, dtype=np.float))) / xs.shape[0]
 
 
 def midpoint_iteration(A, B, C, a, b, n, xa):
     ts = np.linspace(a, b, n)
-    print(ts)
     xs_act = calculate_xs_act(A, B, C, ts)
     xs = midpoint(A, B, xa, ts)
     prec = calculate_precision(xs, xs_act)
@@ -148,7 +147,7 @@ def midpoint_with_precision(A, B, a, b, n, xa, E):
     output_file_path = f'midpoint_report_{time.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
     fig = MPlot(output_file_path, a, b)
     fig.update_displayer(ts, [xs_act], ['actual'], 0, True)
-    print(xs_act)
+
     id = 0
     while True:
         ts, xs_act, xs, prec = midpoint_iteration(A, B, C, a, b, n, xa)
