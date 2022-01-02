@@ -15,18 +15,20 @@ class MPlot:
         self.output_file_path = output_file_path
         self.a = a
         self.b = b
+        self.starting_indexes[0] = 0
         plt.ion()
         self.fig = plt.figure()
         plt.subplots_adjust(bottom=0.2)
-        self.starting_indexes[0] = 0
 
-    def update_displayer(self, ts_list, xs_list, labels, steps, skip_adding=False):
-        if not skip_adding: self.current_id += 1
+    def update_displayer(self, ts, xs_list, labels, steps, skip_adding=False):
+        if not skip_adding:
+            self.current_id += 1
+
         self.fig.clf()
         graph = self.fig.add_subplot(111)
 
         for i in range(len(labels)):
-            graph.plot(ts_list, xs_list[i], label=labels[i])
+            graph.plot(ts, xs_list[i], label=labels[i])
 
         plt.title(f'Midpoint iteration number {self.current_id + 1} [{steps} steps]')
         plt.legend()
@@ -34,6 +36,7 @@ class MPlot:
         if not skip_adding:
             self.steps_by_id[self.current_id] = steps
             self.starting_indexes[self.current_id + 1] = self.starting_indexes.get(self.current_id) + steps
+
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -49,39 +52,22 @@ class MPlot:
         steps = self.steps_by_id.get(self.current_id)
         actual, calculated = self.get_data()
         ts = np.linspace(self.a, self.b, steps)
-        # print(len(actual), len(calculated), len(ts))
-        # print(self.starting_indexes)
-        # print(self.steps_by_id)
-
         self.update_displayer(ts, [actual, calculated], ['actual', 'calculated'], steps, skip_adding=True)
-
-        self.add_button()
-        # ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
-        # ax_next = plt.axes([0.81, 0.05, 0.1, 0.075])
-        # b_next = Button(ax_next, 'Next')
-        # b_next.on_clicked(self.next)
-        # b_prev = Button(ax_prev, 'Previous')
-        # b_prev.on_clicked(self.prev)
+        self.add_buttons()
 
     def get_data(self):
-        skiprows, border_row = self.get_skiprows_and_nrows(self.current_id)
+        starting_row, border_row = self.get_starting_and_border_rows(self.current_id)
         df = pd.read_csv(self.output_file_path, delimiter='|', usecols=['actual value', 'calculated value'])
-
-        actual = df['actual value'].values.tolist()[skiprows:border_row]
-        calculated = df['calculated value'].values.tolist()[skiprows:border_row]
+        actual = df['actual value'].values.tolist()[starting_row: border_row]
+        calculated = df['calculated value'].values.tolist()[starting_row: border_row]
         return actual, calculated
 
-    def get_skiprows_and_nrows(self, id):
-        skiprows = self.starting_indexes.get(id)
-        border_row = skiprows + self.steps_by_id.get(id)
-        return skiprows, border_row
+    def get_starting_and_border_rows(self, interation_index):
+        starting_row = self.starting_indexes.get(interation_index)
+        border_row = starting_row + self.steps_by_id.get(interation_index)
+        return starting_row, border_row
 
-    def lock_displayer(self):
-        self.starting_indexes.pop(self.current_id + 1)
-        plt.ioff()
-        self.add_button()
-
-    def add_button(self):
+    def add_buttons(self):
         ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
         ax_next = plt.axes([0.81, 0.05, 0.1, 0.075])
         self.next_button = Button(ax_next, 'Next')
@@ -89,3 +75,8 @@ class MPlot:
         self.prev_button = Button(ax_prev, 'Previous')
         self.prev_button.on_clicked(self.prev)
         plt.show()
+
+    def end_interation_and_add_buttons(self):
+        plt.ioff()
+        self.starting_indexes.pop(self.current_id + 1)
+        self.add_buttons()
