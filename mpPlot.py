@@ -8,6 +8,8 @@ class MPlot:
     current_id = -1
     starting_indexes = dict()
     steps_by_id = dict()
+    prev_button = None
+    next_button = None
 
     def __init__(self, output_file_path, a, b):
         self.output_file_path = output_file_path
@@ -51,7 +53,7 @@ class MPlot:
         # print(self.starting_indexes)
         # print(self.steps_by_id)
 
-        self.update_displayer(ts, [actual, calculated], ['actual', 'calculated'], steps)
+        self.update_displayer(ts, [actual, calculated], ['actual', 'calculated'], steps, skip_adding=True)
 
         self.add_button()
         # ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
@@ -82,8 +84,8 @@ class MPlot:
     def add_button(self):
         ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
         ax_next = plt.axes([0.81, 0.05, 0.1, 0.075])
-        b_next = Button(ax_next, 'Next')
-        b_next.on_clicked(self.next)
-        b_prev = Button(ax_prev, 'Previous')
-        b_prev.on_clicked(self.prev)
+        self.next_button = Button(ax_next, 'Next')
+        self.next_button.on_clicked(self.next)
+        self.prev_button = Button(ax_prev, 'Previous')
+        self.prev_button.on_clicked(self.prev)
         plt.show()
