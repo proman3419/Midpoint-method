@@ -47,28 +47,32 @@ class MPlot:
         steps = self.steps_by_id.get(self.current_id)
         actual, calculated = self.get_data()
         ts = np.linspace(self.a, self.b, steps)
-        plt.plot(ts, actual, label='actual')
-        plt.plot(ts, calculated, label='calculated')
-        ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
-        ax_next = plt.axes([0.81, 0.05, 0.1, 0.075])
-        b_next = Button(ax_next, 'Next')
-        b_next.on_clicked(self.next)
-        b_prev = Button(ax_prev, 'Previous')
-        b_prev.on_clicked(self.prev)
-        plt.show()
+        # print(len(actual), len(calculated), len(ts))
+        # print(self.starting_indexes)
+        # print(self.steps_by_id)
+
+        self.update_displayer(ts, [actual, calculated], ['actual', 'calculated'], steps)
+
+        self.add_button()
+        # ax_prev = plt.axes([0.7, 0.05, 0.1, 0.075])
+        # ax_next = plt.axes([0.81, 0.05, 0.1, 0.075])
+        # b_next = Button(ax_next, 'Next')
+        # b_next.on_clicked(self.next)
+        # b_prev = Button(ax_prev, 'Previous')
+        # b_prev.on_clicked(self.prev)
 
     def get_data(self):
-        skiprows, nrows = self.get_skiprows_and_nrows(self.current_id)
+        skiprows, border_row = self.get_skiprows_and_nrows(self.current_id)
         df = pd.read_csv(self.output_file_path, delimiter='|', usecols=['actual value', 'calculated value'])
 
-        actual = df['actual value'].values.tolist()[skiprows: skiprows + nrows]
-        calculated = df['calculated value'].values.tolist()[skiprows: skiprows + nrows]
+        actual = df['actual value'].values.tolist()[skiprows:border_row]
+        calculated = df['calculated value'].values.tolist()[skiprows:border_row]
         return actual, calculated
 
     def get_skiprows_and_nrows(self, id):
         skiprows = self.starting_indexes.get(id)
-        nrows = skiprows + self.steps_by_id.get(id)
-        return skiprows, nrows
+        border_row = skiprows + self.steps_by_id.get(id)
+        return skiprows, border_row
 
     def lock_displayer(self):
         self.starting_indexes.pop(self.current_id + 1)
